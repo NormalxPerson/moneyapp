@@ -19,6 +19,7 @@ public class DatabaseActions {
   private static final String addTransaction = "INSERT TRANSACTION";
   private static final String getAllTransactions = "GET_ALL_TRANSACTIONS";
   private static final String getAccountIdByName = "GET_ID_BY_ACCOUNT_NAME";
+  private static long runningTotal = 0;
 
 
   public DatabaseActions(Connection conn) {
@@ -211,6 +212,7 @@ public class DatabaseActions {
       conn.setAutoCommit(false);
 
       for ( Transaction t : transList ) {
+        runningTotal += t.getAmount();
         preparedst.setString(1, t.getDate().toString());
         preparedst.setString(2, t.getDescription());
         preparedst.setLong(3, t.getAmount());
@@ -220,7 +222,6 @@ public class DatabaseActions {
 
       preparedst.executeBatch();
       conn.commit(); // Commit the transaction
-      deleteRealTransFromTemp();
     } catch (SQLException e) {
       System.out.println("Error during database insert without check: " + e.getMessage());
       throw e; // Rethrow the exception
@@ -236,33 +237,26 @@ public class DatabaseActions {
             "AND Transactions.account_id = TempTransactions.account_id);";
 
     try (Statement st = conn.createStatement()) {
-      st.executeUpdate(mergeTempAndRealSql);
+      int rowsMerged = st.executeUpdate(mergeTempAndRealSql);
+      System.out.println("in mergeTransTables() ROWS MERGED: " + rowsMerged);
     } catch (SQLException e) {
         throw new RuntimeException(e);
     }
   }
 
-  public void deleteRealTransFromTemp() {
-    String deleteSql = "DELETE FROM TempTransactions " +
-            "WHERE EXISTS (SELECT 1 FROM Transactions " +
-            "WHERE Transactions.date = TempTransactions.date " +
-            "AND Transactions.description = TempTransactions.description " +
-            "AND Transactions.account_id = TempTransactions.account_id);";
+  public void deleteTempTransTable() {
+    String clearTempSql = "DELETE FROM TempTransactions";
 
     try (Statement st = conn.createStatement()) {
-      st.executeUpdate(deleteSql);
+      int rowsDelted = st.executeUpdate(clearTempSql);
+      System.out.println("In deleteTransTable() ROWS DELETED: " + rowsDelted);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
   }
 
   public List<Transaction> getPotentialDuplicateTransactions() {
-    String sql = "SELECT date, description, amount, account_id FROM TempTransactions " +
-            "WHERE EXISTS (SELECT 1 FROM Transactions " +
-            "WHERE Transactions.date = TempTransactions.date " +
-            "AND Transactions.amount = TempTransactions.amount " +
-            "AND Transactions.description = TempTransactions.description " +
-            "AND Transactions.account_id = TempTransactions.account_id)";
+    String sql = "SELECT date, description, amount, account_id FROM TempTransactions";
 
     List<Transaction> transactions = new ArrayList<>();
     try {
@@ -316,19 +310,56 @@ public class DatabaseActions {
     return transactions;
 }*/
 
-public long getAmountfromDuplicateTransactions() {
-
-  try (PreparedStatement preSt = conn.prepareStatement("SELECT sum(amount) FROM TempTransactions ");
-       ResultSet rs = preSt.executeQuery()) {
-
-      return rs.getLong(1);
-  } catch (SQLException e) {
-    System.out.println("Error getting total from actual dupes!");
-  }
-  return 0;
+public long getRunningTotal() {
+  return runningTotal;
 }
 public void checkDBThenAddTransactions(List<Transaction> transList) throws SQLException {
-  try (PreparedStatement preparedst = conn.prepareStatement("INSERT INTO TempTransactions (date, description, amount, account_id) VALUES (?, ?, ?, ?);")) {
+  // SQL to check if a transaction exists in the Transactions table
+  String checkExistenceSql = "SELECT 1 FROM Transactions WHERE date = ? AND description = ? AND account_id = ? AND amount = ?";
+
+  // SQL to insert a new transaction into the Transactions table
+  String insertTransSql = "INSERT INTO Transactions (date, description, amount, account_id) VALUES (?, ?, ?, ?)";
+
+  // SQL to insert a potential duplicate into the TempTransactions table
+  String insertTempSql = "INSERT INTO TempTransactions (date, description, amount, account_id) VALUES (?, ?, ?, ?)";
+
+  try (PreparedStatement checkStmt = conn.prepareStatement(checkExistenceSql);
+       PreparedStatement transStmt = conn.prepareStatement(insertTransSql);
+       PreparedStatement tempStmt = conn.prepareStatement(insertTempSql)) {
+    conn.setAutoCommit(false);
+
+    for (Transaction t : transList) {
+      // Set parameters for the existence check
+      checkStmt.setString(1, t.getDate().toString());
+      checkStmt.setString(2, t.getDescription());
+      checkStmt.setInt(3, t.getAccountId());
+      checkStmt.setLong(4, t.getAmount());
+
+      try (ResultSet rs = checkStmt.executeQuery()) {
+        if (rs.next()) {
+          // If the transaction exists, insert it into TempTransactions
+          tempStmt.setString(1, t.getDate().toString());
+          tempStmt.setString(2, t.getDescription());
+          tempStmt.setLong(3, t.getAmount());
+          tempStmt.setInt(4, t.getAccountId());
+          tempStmt.addBatch();
+        } else {
+          // If the transaction does not exist, insert it into Transactions
+          runningTotal += t.getAmount();
+          transStmt.setString(1, t.getDate().toString());
+          transStmt.setString(2, t.getDescription());
+          transStmt.setLong(3, t.getAmount());
+          transStmt.setInt(4, t.getAccountId());
+          transStmt.addBatch();
+        }
+      }
+    }
+
+    // Execute batch inserts
+    transStmt.executeBatch();
+    tempStmt.executeBatch();
+    conn.commit(); // Commit the transaction
+  /*try (PreparedStatement preparedst = conn.prepareStatement("INSERT INTO TempTransactions (date, description, amount, account_id) VALUES (?, ?, ?, ?);")) {
     conn.setAutoCommit(false);
 
     for ( Transaction t : transList ) {
@@ -340,14 +371,7 @@ public void checkDBThenAddTransactions(List<Transaction> transList) throws SQLEx
     }
 
     preparedst.executeBatch();
-    conn.commit(); // Commit the transaction
-    //List<Transaction> tempTransactions = getPotentialDuplicateTransactions();
-
-    mergeTransTables();
-    //List<Transaction> tempTransactionsm = getPotentialDuplicateTransactions();
-    deleteRealTransFromTemp();
-    //List<Transaction> tempTransactionsd = getPotentialDuplicateTransactions();
-
+    conn.commit(); // Commit the transaction*/
   } catch (SQLException e) {
     System.out.println("Error during database insert/merge: " + e.getMessage());
     throw e; // Rethrow the exception

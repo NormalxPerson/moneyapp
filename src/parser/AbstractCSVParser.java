@@ -40,6 +40,7 @@ public abstract class AbstractCSVParser implements CSVParser {
 
         getPotentialsFromDB();
         updateRunningTotal();
+        Database.getDatabaseInstance().deleteTransTable();
         System.out.println("Processed "+rowNumber+" Transactions!");
     }
 
@@ -129,7 +130,6 @@ public abstract class AbstractCSVParser implements CSVParser {
                 potentialDuplicates.add(transaction);
             } else {
                 newTransList.add(transaction);
-               runningTotal += amount;
             }
             if (newTransList.size() == batchSize) {
                 sendTransList(newTransList);
@@ -174,10 +174,10 @@ public abstract class AbstractCSVParser implements CSVParser {
 
     protected void updateRunningTotal() {
         try {
-            long dupeAmt = Database.getDatabaseInstance().getDupeAmt();
-            if (dupeAmt >= 0) { runningTotal = runningTotal - dupeAmt; }
-            else { runningTotal = runningTotal + dupeAmt; }
-        } catch (SQLException e) {throw new RuntimeException(e);}
+            this.runningTotal = Database.getDatabaseInstance().getRunningTotal();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected void gatherHeaders(String line) {
@@ -231,6 +231,7 @@ public abstract class AbstractCSVParser implements CSVParser {
     }
 
     public long getRunningTotal() {
+
         return runningTotal;
     }
 

@@ -27,9 +27,8 @@ public class DuplicateTransactionHandler {
             System.out.println("No potential duplicates to review.");
             return potentialDuplicates;
         }
-
         System.out.println("\n"+displayHeader);
-        int batchSize = 9;
+        int batchSize = 10;
         int index = 0;
         int total = potentialDuplicates.size();
         while (index < total) {
@@ -42,7 +41,7 @@ public class DuplicateTransactionHandler {
 
             }
             System.out.println("Enter 'all' if all are duplicates, 'none' if none are duplicates, or specific numbers for certain duplicates.");
-            System.out.println("Enter the numbers of the actual duplicates, separated by commas (e.g., 1,3,5).");
+            System.out.println("Enter the numbers of the actual duplicates, separated by commas (e.g., 1,3,5): ");
 
             String input = scan.nextLine().trim();
             if ("all".equalsIgnoreCase(input)) {
@@ -68,7 +67,7 @@ public class DuplicateTransactionHandler {
     private void processUserDecision(List<Integer> indexOfDuplicates) {
         System.out.println(indexOfDuplicates.toString());
         for ( int i : indexOfDuplicates ) {
-            System.out.println("Removing: " + potentialDuplicates.get(i).toString());
+            System.out.println("Removing: " + i + potentialDuplicates.get(i).toString());
             potentialDuplicates.remove(i);
         }
     }

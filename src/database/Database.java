@@ -100,8 +100,12 @@ public class Database {
     } catch (SQLException e) {System.out.println("Error when adding to DB without checking!");}
   }
 
-  public long getDupeAmt() {
-      return da.getAmountfromDuplicateTransactions();
+  public long getRunningTotal() {
+      return da.getRunningTotal();
+  }
+
+  public void deleteTransTable() {
+    da.deleteTempTransTable();
   }
 
   public boolean tableExists(Connection conn, String tableName) throws SQLException {
