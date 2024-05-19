@@ -174,7 +174,7 @@ public abstract class AbstractCSVParser implements CSVParser {
 
     protected void updateRunningTotal() {
         try {
-            this.runningTotal = Database.getDatabaseInstance().getRunningTotal();
+            this.runningTotal = Database.getDatabaseInstance().getRunningTotal(accountID);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

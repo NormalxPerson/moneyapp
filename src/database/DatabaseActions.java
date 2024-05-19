@@ -5,8 +5,6 @@ import model.DebitAccount;
 import model.Transaction;
 
 import java.sql.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -248,8 +246,8 @@ public class DatabaseActions {
     String clearTempSql = "DELETE FROM TempTransactions";
 
     try (Statement st = conn.createStatement()) {
-      int rowsDelted = st.executeUpdate(clearTempSql);
-      System.out.println("In deleteTransTable() ROWS DELETED: " + rowsDelted);
+      int rowsDeleted = st.executeUpdate(clearTempSql);
+      System.out.println("In deleteTransTable() ROWS DELETED: " + rowsDeleted);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
@@ -310,8 +308,17 @@ public class DatabaseActions {
     return transactions;
 }*/
 
-public long getRunningTotal() {
-  return runningTotal;
+public long getRunningTotal(int account_id) {
+  String updateBalanceSql = "UPDATE Accounts SET account_balance = account_balance + ? WHERE account_id = ?";
+  try (PreparedStatement updateBalSt = conn.prepareStatement(updateBalanceSql)) {
+    updateBalSt.setLong(1, runningTotal);
+    updateBalSt.setInt(2,account_id );
+    int row = updateBalSt.executeUpdate();
+    System.out.println(row+ "balance updated");
+  } catch (SQLException e) {System.out.println("Error updating balance!");}
+  long total = runningTotal;
+  runningTotal = 0;
+  return total;
 }
 public void checkDBThenAddTransactions(List<Transaction> transList) throws SQLException {
   // SQL to check if a transaction exists in the Transactions table

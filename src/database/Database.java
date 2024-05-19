@@ -100,8 +100,8 @@ public class Database {
     } catch (SQLException e) {System.out.println("Error when adding to DB without checking!");}
   }
 
-  public long getRunningTotal() {
-      return da.getRunningTotal();
+  public long getRunningTotal(int id) {
+      return da.getRunningTotal(id);
   }
 
   public void deleteTransTable() {
