@@ -236,6 +236,7 @@ public class DatabaseActions {
 
     try (Statement st = conn.createStatement()) {
       int rowsMerged = st.executeUpdate(mergeTempAndRealSql);
+      conn.commit();
       System.out.println("in mergeTransTables() ROWS MERGED: " + rowsMerged);
     } catch (SQLException e) {
         throw new RuntimeException(e);
@@ -247,6 +248,8 @@ public class DatabaseActions {
 
     try (Statement st = conn.createStatement()) {
       int rowsDeleted = st.executeUpdate(clearTempSql);
+      System.out.println("is set to auto commit: " + conn.getAutoCommit());
+      conn.commit();
       System.out.println("In deleteTransTable() ROWS DELETED: " + rowsDeleted);
     } catch (SQLException e) {
       throw new RuntimeException(e);
