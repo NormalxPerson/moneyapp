@@ -288,6 +288,18 @@ public class DatabaseActions {
     return transactions;
   }
 
+  public void updateAccountBalance(int id, long newBalance) {
+    String updateBalanceSql = "UPDATE Accounts SET account_balance = ? WHERE account_id = ?";
+
+    try (PreparedStatement preparedst = conn.prepareStatement(updateBalanceSql)) {
+      preparedst.setLong(1, newBalance);
+      preparedst.setInt(2, id);
+      preparedst.executeUpdate();
+    } catch (SQLException e) {
+      System.out.println("Error updating balance!");
+    }
+  }
+
   /*public List<Transaction> getPotentialDuplicateTransactions() {
     List<Transaction> transactions = new ArrayList<>();
     try (PreparedStatement preSt = conn.prepareStatement("SELECT date, description, amount, account_id FROM TempTransactions WHERE EXISTS (SELECT 1 FROM Transactions WHERE Transactions.date = TempTransactions.date AND Transactions.amount = TempTransactions.amount AND Transactions.description = TempTransactions.description AND Transactions.account_id = TempTransactions.account_id)");

@@ -162,7 +162,12 @@ public class Database {
   public List<Transaction> getDuplicateTransactionsFromDB() {
     return da.getPotentialDuplicateTransactions();
   }
+
+  public void updateAccountBalance(int id, long newBalance) {
+    da.updateAccountBalance(id, newBalance);
+  }
 }
+
 
 
 /*  private void setTableNamesToList() throws SQLException {
