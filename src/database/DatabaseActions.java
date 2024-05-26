@@ -267,7 +267,7 @@ public class DatabaseActions {
 
       // Check if ResultSet is empty and log the condition
       if (!rs.isBeforeFirst()) {
-        System.out.println("No potential duplicates found.");
+        System.out.println("No potential duplicates found..");
       } else {
         while (rs.next()) {
           String date = rs.getString("date");
