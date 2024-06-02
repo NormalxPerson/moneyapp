@@ -38,7 +38,7 @@ public class ViewingAccountsState extends AbstractState {
     public void parserRecap(int numOfTransaction, long newBalance, String accountName) {
         String formattedAmount = MoneyMathUtils.formatForDisplay(newBalance);
         displayAccounts();
-        printOptionHeader("CSV File has been Processed!!");
+        printOptionHeader("CSV File has been Processed!");
         System.out.println("Added "+numOfTransaction+ " Transactions to your "+ accountName.toUpperCase()+ " Account!");
         System.out.println(accountName.toUpperCase() + " now has a Balance of "+ formattedAmount);
         displayOptions();
